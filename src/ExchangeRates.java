@@ -39,11 +39,14 @@ public class ExchangeRates {
 
             JSONObject s = null;
             try{
+                //get the big file
                 JSONObject temp = new JSONObject(rates);
-
+                //get the object ffrom that big file
+                s = temp.getJSONObject("eur");
             }catch(Exception e){
-
             }
+            System.out.println(s.getFloat("rate"));
+
             System.out.println(rates);
         }
 
