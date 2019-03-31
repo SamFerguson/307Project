@@ -1,4 +1,5 @@
 
+import javafx.beans.property.SetPropertyBase;
 import org.json.JSONObject;
 import org.omg.CORBA.portable.InputStream;
 
@@ -9,6 +10,8 @@ import java.lang.reflect.Array;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Set;
+
 import org.jgrapht.graph.*;
 import static java.lang.Math.log;
 
@@ -80,6 +83,43 @@ public class ExchangeRatesGraph {
         }
     }
 
+    public static double bellmanFord(Set<String> vertices, Set<DefaultWeightedEdge> edges, int source){
+
+        double[] distance = new double[vertices.size()];
+        String[] previous = new String[vertices.size()];
+
+        for(int i = 0; i < vertices.size(); i++){
+
+            distance[i] = Double.POSITIVE_INFINITY;
+            previous[i] = null;
+        }
+
+        distance[source] = 0;
+
+        for(int i =1; i<vertices.size(); i++){
+
+            /*// Step 2: relax edges repeatedly
+            for i from 1 to size(vertices)-1:
+            for each edge (u, v) with weight w in edges:
+            if distance[u] + w < distance[v]:
+            distance[v] := distance[u] + w
+            predecessor[v] := u*/
+        }
+
+        /*// Step 3: check for negative-weight cycles
+        for each edge (u, v) with weight w in edges:
+        if distance[u] + w < distance[v]:
+        error "Graph contains a negative-weight cycle"
+
+        return distance[], predecessor[]*/
+
+
+
+        return 0.0;
+    }
+
+
+
     public static void main(String[] args){
         //this makes the vertexes
         buildDirectedGraph();
@@ -91,6 +131,7 @@ public class ExchangeRatesGraph {
         for(DefaultWeightedEdge e : exchangeGraph.edgeSet()){
             System.out.println(exchangeGraph.getEdgeSource(e) + " --> " + exchangeGraph.getEdgeTarget(e)+ "   " + exchangeGraph.getEdgeWeight(e));
         }
+        System.out.println(exchangeGraph.vertexSet());
     }
 
 }
