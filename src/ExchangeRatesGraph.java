@@ -88,16 +88,31 @@ public class ExchangeRatesGraph {
         double[] distance = new double[vertices.size()];
         String[] previous = new String[vertices.size()];
 
+        // Set weight to infinity for all edges, then assigns NULL to the previous vertex
         for(int i = 0; i < vertices.size(); i++){
 
             distance[i] = Double.POSITIVE_INFINITY;
             previous[i] = null;
         }
 
-        distance[source] = 0;
+        distance[source] = 0; // Sets distance from start to itself to 0 (duh)
 
+        // "relaxes" edges
         for(int i =1; i<vertices.size(); i++){
+            for(DefaultWeightedEdge e : edges){
+                String start = exchangeGraph.getEdgeSource(e);
+                String end = exchangeGraph.getEdgeTarget(e);
+                //NOTE: I just don't know what to assign start and end as
+                //  I know they need to be ints but I'm using what I have as a place holder.
+                //  If we can get the indices of a vertex and use those to get the edges then thats what
+                //  they need to be but I'm not sure how
+                Double weight = exchangeGraph.getEdgeWeight(e);
 
+                if(distance[start] + weight < distance[end]) {
+                    distance[end] = distance[start] + weight;
+                    previous[end] = start;
+                }
+            }
             /*// Step 2: relax edges repeatedly
             for i from 1 to size(vertices)-1:
             for each edge (u, v) with weight w in edges:
@@ -106,16 +121,30 @@ public class ExchangeRatesGraph {
             predecessor[v] := u*/
         }
 
-        /*// Step 3: check for negative-weight cycles
-        for each edge (u, v) with weight w in edges:
-        if distance[u] + w < distance[v]:
-        error "Graph contains a negative-weight cycle"
+        for(DefaultWeightedEdge e : edges) {
+            String start = exchangeGraph.getEdgeSource(e);
+            String end = exchangeGraph.getEdgeTarget(e);
+            //NOTE: I just don't know what to assign start and end as
+            //  I know they need to be ints but I'm using what I have as a place holder.
+            //  If we can get the indices of a vertex and use those to get the edges then thats what
+            //  they need to be but I'm not sure how
+            Double weight = exchangeGraph.getEdgeWeight(e);
 
-        return distance[], predecessor[]*/
+            if (distance[start] + weight < distance[end]) {
+                System.out.println("Negative cycle detected: Great!");
+            }
+            /*// Step 3: Check for negative-weight cycles
+            for each edge (u, v) with weight w in edges:
+            if distance[u] + w < distance[v]:
+            error "Graph contains a negative-weight cycle"
+
+            return distance[], predecessor[]*/
+        }
 
 
 
-        return 0.0;
+        return distance, previous;
+        //NOTE: Multiple returns? Not to sure about this either.
     }
 
 
