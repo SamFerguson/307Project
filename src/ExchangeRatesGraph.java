@@ -1,5 +1,6 @@
 
 //import javafx.beans.property.SetPropertyBase;
+import org.jgrapht.Graphs;
 import org.json.JSONObject;
 import org.omg.CORBA.portable.InputStream;
 
@@ -10,6 +11,7 @@ import java.lang.reflect.Array;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Set;
 
 import org.jgrapht.graph.*;
@@ -20,7 +22,7 @@ import static java.lang.Math.log;
 public class ExchangeRatesGraph {
 
     private String currencyTag;
-    private static String[] currencies = {"usd", "jpy", "chf", "eur", "gbp", "aoa", "yer", "pyg"};
+    private static String[] currencies = {"usd", "jpy", "chf", "aoa", "gbp", "eur", "pyg"};
     private static DefaultDirectedWeightedGraph<String, DefaultWeightedEdge> exchangeGraph;
 
     public static void buildDirectedGraph(){
@@ -83,68 +85,107 @@ public class ExchangeRatesGraph {
         }
     }
 
-    public static double bellmanFord(Set<String> vertices, Set<DefaultWeightedEdge> edges, int source){
 
-        double[] distance = new double[vertices.size()];
-        String[] previous = new String[vertices.size()];
 
-        // Set weight to infinity for all edges, then assigns NULL to the previous vertex
-        for(int i = 0; i < vertices.size(); i++){
+    public BellmanReturn BellmanFordAlgorithm(Set<String> vertices, Set<DefaultWeightedEdge> edges, String vertexSource){
 
-            distance[i] = Double.POSITIVE_INFINITY;
-            previous[i] = null;
+        //possible ideas to get past our indexing problem:
+        //1.)pass the set of vertices through a wrapper to wrap them with an index yeah lets do that.
+        //make n array of vertices with an index
+        Vertices[] vertices1 = new Vertices[vertices.size()+1];
+        int j = 0;
+        //for each vertex in the set of vertices
+        for(String vertex: vertices){
+            //add them to the wrapper array with an index
+            vertices1[j] = new Vertices(vertex, j);
+            j++;
+        }
+        vertices1[vertices1.length-1] = vertices1[0];
+        System.out.print("number of edges in the set" + edges.size());
+        Edge[] e = new Edge[edges.size()];
+        j = 0;
+        //for each edge, get the source, find the int value of the source, find the int value of the edge
+        for(DefaultWeightedEdge edge:edges){
+            String source= exchangeGraph.getEdgeSource(edge);
+            String end = exchangeGraph.getEdgeTarget(edge);
+            double weight = exchangeGraph.getEdgeWeight(edge);
+            Vertices s = vertices1[0];
+            int i = 0;
+            //iterate until you find source vertex
+            while(!s.getVertex().equals(source)){
+                s = vertices1[i];
+                i++;
+            }
+            Vertices testEnd = vertices1[0];
+            i = 0;
+            while(!testEnd.getVertex().equals(end)){
+                testEnd = vertices1[i];
+                i++;
+            }
+
+            //now you have the index of the start vertex, end vertex, and weight
+            //and thus you can make an edge that works with the edges loop
+            e[j] = new Edge(s.getIndex(), testEnd.getIndex(), weight);
+            j++;
         }
 
-        distance[source] = 0; // Sets distance from start to itself to 0 (duh)
+        for(int i = 0; i< e.length; i++){
+            System.out.print(e[i].getWeight()+", ");
+        }
+        //make arrays of the distances and predecessor
+        double[] distances = new double[vertices.size()];
+        String[] predecessor = new String[vertices.size()];
+        //STEP 1!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        for(int i = 0; i < vertices1[vertices1.length-1].getIndex()+1; i++){
+            distances[i] = Double.POSITIVE_INFINITY;
+            predecessor[i] = null;
+        }
+        distances[0] = 0;
+        System.out.println(Arrays.toString(distances));
+        System.out.println(Arrays.toString(predecessor));
+        //the relax sTEP 2!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        //for each vertex in the vertex array with indices
+        System.out.println(e.length);
+        for(int i = 0; i<vertices1.length; i++){
+            //for each edge in the graph with start u and end v
+            System.out.println(Arrays.toString(distances));
+            int z = 0;
+            for(Edge uv: e){
+                //these are the indices of the vertices
+                //System.out.println(uv.getVertexSource() + " " + uv.getVertexEnd());
 
-        // "relaxes" edges
-        for(int i =1; i<vertices.size(); i++){
-            for(DefaultWeightedEdge e : edges){
-                String start = exchangeGraph.getEdgeSource(e);
-                String end = exchangeGraph.getEdgeTarget(e);
-                //NOTE: I just don't know what to assign start and end as
-                //  I know they need to be ints but I'm using what I have as a place holder.
-                //  If we can get the indices of a vertex and use those to get the edges then thats what
-                //  they need to be but I'm not sure how
-                Double weight = exchangeGraph.getEdgeWeight(e);
-
-                if(distance[start] + weight < distance[end]) {
-                    distance[end] = distance[start] + weight;
-                    previous[end] = start;
+                int u = uv.getVertexSource();
+                int v = uv.getVertexEnd();
+                System.out.println(i+1 + "    " + z + "       " + Arrays.toString(distances));
+                System.out.println("\t\t\t\t\t\tu=   " + u + " v=   " +v);
+                if(distances[u] + uv.getWeight() + 10e-10 < distances[v]){
+                    distances[v] = distances[u] + uv.getWeight();
+                    //for each vertex in the vertices thing
+                    //if the int v = the index of a vertex then that's the string to set predecessor
+                    for(Vertices v2: vertices1){
+                        if(v == v2.getIndex()){
+                            predecessor[v] = v2.getVertex();
+                        }
+                    }
                 }
+                z += 1;
             }
-            /*// Step 2: relax edges repeatedly
-            for i from 1 to size(vertices)-1:
-            for each edge (u, v) with weight w in edges:
-            if distance[u] + w < distance[v]:
-            distance[v] := distance[u] + w
-            predecessor[v] := u*/
+        }
+        /*
+        for each edge (u, v) with weight w in edges:
+        if distance[u] + w < distance[v]:
+        error "Graph contains a negative-weight cycl
+         */
+        for(Edge uv:e){
+            int u = uv.getVertexSource();
+            int v = uv.getVertexEnd();
+            if(distances[u] + uv.getWeight() < distances[v]){
+                return new BellmanReturn(predecessor, distances);
+                ///throw new RuntimeException();
+            }
         }
 
-        for(DefaultWeightedEdge e : edges) {
-            String start = exchangeGraph.getEdgeSource(e);
-            String end = exchangeGraph.getEdgeTarget(e);
-            //NOTE: I just don't know what to assign start and end as
-            //  I know they need to be ints but I'm using what I have as a place holder.
-            //  If we can get the indices of a vertex and use those to get the edges then thats what
-            //  they need to be but I'm not sure how
-            Double weight = exchangeGraph.getEdgeWeight(e);
-
-            if (distance[start] + weight < distance[end]) {
-                System.out.println("Negative cycle detected: Great!");
-            }
-            /*// Step 3: Check for negative-weight cycles
-            for each edge (u, v) with weight w in edges:
-            if distance[u] + w < distance[v]:
-            error "Graph contains a negative-weight cycle"
-
-            return distance[], predecessor[]*/
-        }
-
-
-
-        return distance, previous;
-        //NOTE: Multiple returns? Not to sure about this either.
+        return new BellmanReturn(predecessor, distances);
     }
 
 
@@ -160,7 +201,17 @@ public class ExchangeRatesGraph {
         for(DefaultWeightedEdge e : exchangeGraph.edgeSet()){
             System.out.println(exchangeGraph.getEdgeSource(e) + " --> " + exchangeGraph.getEdgeTarget(e)+ "   " + exchangeGraph.getEdgeWeight(e));
         }
-        System.out.println(exchangeGraph.vertexSet());
+        System.out.println("SAM THE STUFF ABOVE THIS IS NOT A PART OF WHAT WE ARE LOOKING AT!!!!!");
+        ExchangeRatesGraph e = new ExchangeRatesGraph();
+        BellmanReturn b = e.BellmanFordAlgorithm(exchangeGraph.vertexSet(), exchangeGraph.edgeSet(), "");
+        System.out.println(Arrays.toString(b.getDoubleReturn())+ "\n -------------------------------------- \n" + Arrays.toString(b.getStringReturn()));
+        double sum = 0;
+        for(double d: b.getDoubleReturn()){
+            sum+= d;
+        }
+        System.out.println(sum);
+
+
     }
 
 }
