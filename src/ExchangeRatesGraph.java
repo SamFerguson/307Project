@@ -1,6 +1,9 @@
 
 //import javafx.beans.property.SetPropertyBase;
 import org.jgrapht.Graphs;
+import org.jgrapht.alg.interfaces.ShortestPathAlgorithm;
+import org.jgrapht.alg.shortestpath.BellmanFordShortestPath;
+import org.jgrapht.alg.shortestpath.NegativeCycleDetectedException;
 import org.json.JSONObject;
 import org.omg.CORBA.portable.InputStream;
 
@@ -22,8 +25,8 @@ import static java.lang.Math.log;
 public class ExchangeRatesGraph {
 
     private String currencyTag;
-    private static String[] currencies = {"usd", "jpy", "chf", "aoa", "gbp", "eur", "pyg"};
-    private static DefaultDirectedWeightedGraph<String, DefaultWeightedEdge> exchangeGraph;
+    private static String[] currencies = {"usd" , "jpy", "chf", "aoa", "gbp", "eur", "pyg"};
+    public static DefaultDirectedWeightedGraph<String, DefaultWeightedEdge> exchangeGraph;
 
     public static void buildDirectedGraph(){
         //make the graph
@@ -75,11 +78,11 @@ public class ExchangeRatesGraph {
                     //make this string variable against the other ones
                     JSONObject s = tempJSON.getJSONObject(otherCurrency);
                     System.out.print(s.getString("code")+":  ");
-                    System.out.println(-1*(log(s.getDouble("rate"))));
+                    System.out.println(s.getDouble("rate"));
                     //adds an edge between every vertex from the current one to each of the others
                     DefaultWeightedEdge temp = exchangeGraph.addEdge(currency, otherCurrency);
                     //sets that edges weight to be the thing it should be
-                    exchangeGraph.setEdgeWeight(temp,-1*(log(s.getDouble("rate"))));
+                    exchangeGraph.setEdgeWeight(temp,-1*log(s.getDouble("rate")));
                 }
             }
         }
@@ -92,7 +95,7 @@ public class ExchangeRatesGraph {
         //possible ideas to get past our indexing problem:
         //1.)pass the set of vertices through a wrapper to wrap them with an index yeah lets do that.
         //make n array of vertices with an index
-        Vertices[] vertices1 = new Vertices[vertices.size()+1];
+        Vertices[] vertices1 = new Vertices[vertices.size()];
         int j = 0;
         //for each vertex in the set of vertices
         for(String vertex: vertices){
@@ -100,8 +103,7 @@ public class ExchangeRatesGraph {
             vertices1[j] = new Vertices(vertex, j);
             j++;
         }
-        vertices1[vertices1.length-1] = vertices1[0];
-        System.out.print("number of edges in the set" + edges.size());
+
         Edge[] e = new Edge[edges.size()];
         j = 0;
         //for each edge, get the source, find the int value of the source, find the int value of the edge
@@ -129,18 +131,17 @@ public class ExchangeRatesGraph {
             j++;
         }
 
-        for(int i = 0; i< e.length; i++){
-            System.out.print(e[i].getWeight()+", ");
-        }
         //make arrays of the distances and predecessor
-        double[] distances = new double[vertices.size()];
-        String[] predecessor = new String[vertices.size()];
+        double[] distances = new double[vertices1.length];
+        String[] predecessor = new String[vertices1.length];
         //STEP 1!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        for(int i = 0; i < vertices1[vertices1.length-1].getIndex()+1; i++){
+        for(int i = 0; i < vertices1.length; i++){
             distances[i] = Double.POSITIVE_INFINITY;
             predecessor[i] = null;
         }
+        //the source one is just the first one in the thing.
         distances[0] = 0;
+        predecessor[0] = vertices1[0].getVertex();
         System.out.println(Arrays.toString(distances));
         System.out.println(Arrays.toString(predecessor));
         //the relax sTEP 2!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -151,9 +152,6 @@ public class ExchangeRatesGraph {
             System.out.println(Arrays.toString(distances));
             int z = 0;
             for(Edge uv: e){
-                //these are the indices of the vertices
-                //System.out.println(uv.getVertexSource() + " " + uv.getVertexEnd());
-
                 int u = uv.getVertexSource();
                 int v = uv.getVertexEnd();
                 System.out.println(i+1 + "    " + z + "       " + Arrays.toString(distances));
@@ -180,8 +178,7 @@ public class ExchangeRatesGraph {
             int u = uv.getVertexSource();
             int v = uv.getVertexEnd();
             if(distances[u] + uv.getWeight() < distances[v]){
-                return new BellmanReturn(predecessor, distances);
-                ///throw new RuntimeException();
+                throw new RuntimeException();
             }
         }
 
@@ -203,6 +200,15 @@ public class ExchangeRatesGraph {
         }
         System.out.println("SAM THE STUFF ABOVE THIS IS NOT A PART OF WHAT WE ARE LOOKING AT!!!!!");
         ExchangeRatesGraph e = new ExchangeRatesGraph();
+        BellmanFordShortestPath<String, DefaultWeightedEdge> bell = new BellmanFordShortestPath<>(exchangeGraph, 10e-8);
+        for(String currency: currencies) {
+            try {
+                ShortestPathAlgorithm.SingleSourcePaths<String, DefaultWeightedEdge> cycle = bell.getPaths(currency);
+            } catch (NegativeCycleDetectedException cycle) {
+                System.out.println(cycle.getCycle().getVertexList());
+            }
+        }
+/*
         BellmanReturn b = e.BellmanFordAlgorithm(exchangeGraph.vertexSet(), exchangeGraph.edgeSet(), "");
         System.out.println(Arrays.toString(b.getDoubleReturn())+ "\n -------------------------------------- \n" + Arrays.toString(b.getStringReturn()));
         double sum = 0;
@@ -211,7 +217,7 @@ public class ExchangeRatesGraph {
         }
         System.out.println(sum);
 
-
+*/
     }
 
 }
