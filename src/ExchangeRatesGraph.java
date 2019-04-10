@@ -1,6 +1,7 @@
 
 //import javafx.beans.property.SetPropertyBase;
 import org.jgrapht.Graphs;
+import org.jgrapht.alg.cycle.JohnsonSimpleCycles;
 import org.jgrapht.alg.interfaces.ShortestPathAlgorithm;
 import org.jgrapht.alg.shortestpath.BellmanFordShortestPath;
 import org.jgrapht.alg.shortestpath.NegativeCycleDetectedException;
@@ -15,6 +16,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 import org.jgrapht.graph.*;
@@ -200,24 +202,39 @@ public class ExchangeRatesGraph {
         }
         System.out.println("SAM THE STUFF ABOVE THIS IS NOT A PART OF WHAT WE ARE LOOKING AT!!!!!");
         ExchangeRatesGraph e = new ExchangeRatesGraph();
-        BellmanFordShortestPath<String, DefaultWeightedEdge> bell = new BellmanFordShortestPath<>(exchangeGraph, 10e-8);
+        BellmanFordShortestPath<String, DefaultWeightedEdge> bell = new BellmanFordShortestPath<>(exchangeGraph, 10e-6);
         for(String currency: currencies) {
             try {
                 ShortestPathAlgorithm.SingleSourcePaths<String, DefaultWeightedEdge> cycle = bell.getPaths(currency);
             } catch (NegativeCycleDetectedException cycle) {
-                System.out.println(cycle.getCycle().getVertexList());
+                System.out.println("hey pal you got a cycle");
             }
         }
-/*
-        BellmanReturn b = e.BellmanFordAlgorithm(exchangeGraph.vertexSet(), exchangeGraph.edgeSet(), "");
-        System.out.println(Arrays.toString(b.getDoubleReturn())+ "\n -------------------------------------- \n" + Arrays.toString(b.getStringReturn()));
-        double sum = 0;
-        for(double d: b.getDoubleReturn()){
-            sum+= d;
-        }
-        System.out.println(sum);
+        JohnsonSimpleCycles<String, DefaultWeightedEdge> johnsonSimpleCycles = new JohnsonSimpleCycles<>(exchangeGraph);
+        List<List<String>> cycles = johnsonSimpleCycles.findSimpleCycles();
+        Set<DefaultWeightedEdge> thing = exchangeGraph.edgeSet();
+        ArrayList<Wrapper> edgesToTest = new ArrayList<>();
 
-*/
+        List<List<String>> negativeCycles = new ArrayList<>();
+        for(List<String> listy: cycles){
+            listy.add(listy.get(0));
+
+            double weightSum =0;
+            for(int z = 0; z<listy.size()-1; z++){
+                DefaultWeightedEdge y = exchangeGraph.getEdge(listy.get(z), listy.get(z+1));
+                double aaaaaa = exchangeGraph.getEdgeWeight(y);
+                weightSum += aaaaaa;
+
+            }
+            if(weightSum < -1e-7){
+                negativeCycles.add(listy);
+            }
+        }
+        for(List<String> negatives: negativeCycles){
+            System.out.println(Arrays.toString(negatives.toArray()));
+        }
+
+
     }
 
 }
